@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Orden de Aplicación Fitosanitaria</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 2mm;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #ffffff;
+            color: #333333;
+            font-size: 9px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            padding: 5px 10px;
+            max-width: 100%;
+        }
+
+        h1 {
+            color: #6CA54D;
+            font-size: 18px;
+            margin: 0;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2px;
+            position: relative;
+        }
+
+        .header h1 {
+            flex: 1;
+        }
+
+        .header img {
+            max-height: 35px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .header .order-info {
+            flex: 1;
+            text-align: right;
+        }
+
+        .order-info {
+            text-align: right;
+            font-size: 8px;
+        }
+
+        h2 {
+            color: #6CA54D;
+            border-bottom: 1px solid #6CA54D;
+            padding-bottom: 2px;
+            margin-top: 5px;
+            font-size: 13px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 5px;
+            font-size: 9px;
+        }
+
+        .total-cell {
+            background-color: #DFF0D8; /* Un tono suave de verde */
+            font-weight: bold;
+            border-top: 2px solid #6CA54D; /* Resaltar el borde superior */
+            text-align: right; /* Alinear el texto a la derecha */
+        }
+
+        th, td {
+            padding: 4px;
+            border: 1px solid #dddddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #6CA54D;
+            color: white;
+        }
+
+        .safety-protocol {
+            width: 100%;
+            margin-top: 5px;
+            font-size: 9px;
+        }
+
+        strong {
+            font-size: 9px;
+        }
+
+        .signature-line {
+            display: inline-block;
+            width: 130px;
+            border-bottom: 1px solid #000;
+            vertical-align: baseline;
+            margin-left: 5px;
+        }
+
+        .weather-icons {
+            text-align: center;
+            margin: 10px 0;
+            white-space: nowrap;
+        }
+
+        .weather-icon {
+            display: inline-block;
+            text-align: center;
+            vertical-align: top;
+            margin: 0 2.5px;
+        }
+
+        .weather-icon img {
+            width: 30px;
+            height: 30px;
+            display: block;
+            margin: 0 auto 2px auto;
+        }
+
+        /* Evita que se corten las secciones */
+        .page-break {
+            page-break-inside: avoid;
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header page-break">
+        <h1>Orden de Aplicación Fitosanitaria</h1>
+        <img src="{{ logo_path }}" alt="Logo La Hornilla">
+        <div class="order-info">
+            <strong>Orden N°:</strong> {{ datos.folio }} <br>
+            <strong>Temporada:</strong> {{ datos.temporada_formatted }} | <strong>Fecha:</strong> {{ datos.fecha_planificacion_formatted }}
+        </div>
+    </div>
+
+    <h2 class="page-break" style="margin-bottom: 0; padding-bottom: 0;">Detalles Generales</h2>
+    <table style="width: 100%; border: none; margin: 0; padding: 0; border-collapse: collapse;">
+        <tr style="vertical-align: top;">
+            <td style="width: 33%; padding: 0; margin: 0; line-height: 1.4;">
+                <strong>Fundo:</strong> {{ datos.fundo }} <br>
+                <strong>Especie:</strong> {{ datos.especie }} <br>
+                <strong>Estado Fenológico:</strong> {{ datos.estado_fenologico }} <br>
+                <strong>Modo Aplicación:</strong> {{ datos.modo_aplicacion_nombre }} <br>
+                <strong>Mojamiento:</strong> {{ datos.mojamiento_texto }}
+            </td>
+            <td style="width: 34%; text-align: center; padding: 0; margin: 0; vertical-align: top;">
+                <div class="weather-icons">
+                    <div class="weather-icon">
+                        <img src="{{ weather_images.soleado }}" alt="Soleado">
+                        <div>☐</div>
+                    </div>
+                    <div class="weather-icon">
+                        <img src="{{ weather_images.parcialmente_nublado }}" alt="Parcialmente Nublado">
+                        <div>☐</div>
+                    </div>
+                    <div class="weather-icon">
+                        <img src="{{ weather_images.nublado }}" alt="Nublado">
+                        <div>☐</div>
+                    </div>
+                    <div class="weather-icon">
+                        <img src="{{ weather_images.lluvia }}" alt="Lluvia">
+                        <div>☐</div>
+                    </div>
+                </div>
+            </td>
+            <td style="width: 33%; text-align: right; padding: 0; margin: 0; line-height: 1.4; vertical-align: top;">
+                <strong>Recomendado por:</strong> {{ datos.recomendado_por }} <span class="signature-line"></span><br>
+                <strong>Encargado/a Aplicación:</strong> {{ datos.encargado_aplicacion }} <span class="signature-line"></span><br>
+                <strong>Dosificador/a:</strong> {{ datos.dosificador }} <span class="signature-line"></span>
+            </td>
+        </tr>
+    </table>
+
+    <h2 class="page-break">Detalle de Productos a Aplicar</h2>
+    <table class="page-break">
+        <thead>
+            <tr>
+                <th>Código</th>
+                <th>Producto Comercial</th>
+                <th>Ingrediente Activo</th>
+                <th>Objetivo</th>
+                <th>Actividad Producto</th>
+                <th>Tiempo de Reingreso</th>
+                <th>Carencia (días)</th>
+                <th>Dosis/100L</th>
+                <th>Dosis/Ha</th>
+                <th>Dosis/Maq</th>
+                <th>Observaciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in productos %}
+            <tr>
+                <td>{{ p.codigo_softland }}</td>
+                <td>{{ p.nombre_comercial }}</td>
+                <td>{{ p.ingrediente_activo }}</td>
+                <td>{{ p.objetivo_producto }}</td>
+                <td>{{ p.actividad_producto }}</td>
+                <td>{{ p.tiempo_reingreso }}</td>
+                <td>{{ p.carencia }}</td>
+                <td>{{ p.dosis_100 }}</td>
+                <td>{{ p.dosis_ha }}</td>
+                <td>{{ p.dosis_maq }}</td>
+                <td>{{ p.observaciones }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <h2 class="page-break">Detalle de Maquinadas</h2>
+    <table class="page-break">
+        <thead>
+            <tr>
+                <th rowspan="2">Centro Costo</th>
+                <th rowspan="2">Cuartel</th>
+                <th rowspan="2">Variedad</th>
+                <th rowspan="2">Hectáreas a Aplicar</th>
+                <th rowspan="2">Hectáreas Aplicadas</th>
+                <th rowspan="2">Fecha Viable Cosecha</th>
+                <th rowspan="2">Inicio Aplicación</th>
+                <th rowspan="2">Término Aplicación</th>
+                <th rowspan="2">Mezcla/Cuartel</th>
+                <th rowspan="2">N° Maquinadas</th>
+                <th rowspan="2">Concho</th>
+                <th colspan="2">{{ datos.prod1_nombre or '' }}</th>
+                <th colspan="2">{{ datos.prod2_nombre or '' }}</th>
+                <th colspan="2">{{ datos.prod3_nombre or '' }}</th>
+                <th colspan="2">{{ datos.prod4_nombre or '' }}</th>
+                <th colspan="2">{{ datos.prod5_nombre or '' }}</th>
+                <th colspan="2">{{ datos.prod6_nombre or '' }}</th>
+            </tr>
+            <tr>
+                <th>Teórico</th>
+                <th>Real</th>
+                <th>Teórico</th>
+                <th>Real</th>
+                <th>Teórico</th>
+                <th>Real</th>
+                <th>Teórico</th>
+                <th>Real</th>
+                <th>Teórico</th>
+                <th>Real</th>
+                <th>Teórico</th>
+                <th>Real</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in cuarteles %}
+            <tr>
+                <td>{{ c.centro_costo }}</td>
+                <td>{{ c.cuartel }}</td>
+                <td>{{ c.variedad }}</td>
+                <td>{{ c.hectareas_aplicar }}</td>
+                <td>{{ c.hectareas_aplicadas }}</td>
+                <td>{{ c.fecha_viable_cosecha }}</td>
+                <td>{{ c.hora_inicio }}</td>
+                <td>{{ c.hora_termino }}</td>
+                <td>{{ c.mezcla_cuartel }}</td>
+                <td>{{ c.num_maquinadas }}</td>
+                <td>{{ c.concho }}</td>
+                <td>{{ c.prod1_teorico }}</td>
+                <td>{{ c.prod1_real }}</td>
+                <td>{{ c.prod2_teorico }}</td>
+                <td>{{ c.prod2_real }}</td>
+                <td>{{ c.prod3_teorico }}</td>
+                <td>{{ c.prod3_real }}</td>
+                <td>{{ c.prod4_teorico }}</td>
+                <td>{{ c.prod4_real }}</td>
+                <td>{{ c.prod5_teorico }}</td>
+                <td>{{ c.prod5_real }}</td>
+                <td>{{ c.prod6_teorico }}</td>
+                <td>{{ c.prod6_real }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td colspan="3" class="total-cell">Totales:</td>
+                <td class="total-cell">{{ datos.total_superficie }}</td>
+                <td class="total-cell">{{ datos.total_hectareas_aplicadas or '' }}</td>
+                <td class="total-cell"></td>
+                <td class="total-cell"></td>
+                <td class="total-cell"></td>
+                <td class="total-cell">{{ datos.total_mezcla_cuartel }}</td>
+                <td class="total-cell">{{ datos.total_maquinadas }}</td>
+                <td class="total-cell">{{ datos.total_concho }}</td>
+                <td class="total-cell">{{ datos.total_prod1_teorico }}</td>
+                <td class="total-cell">{{ datos.total_prod1_real or '' }}</td>
+                <td class="total-cell">{{ datos.total_prod2_teorico }}</td>
+                <td class="total-cell">{{ datos.total_prod2_real or '' }}</td>
+                <td class="total-cell">{{ datos.total_prod3_teorico }}</td>
+                <td class="total-cell">{{ datos.total_prod3_real or '' }}</td>
+                <td class="total-cell">{{ datos.total_prod4_teorico }}</td>
+                <td class="total-cell">{{ datos.total_prod4_real or '' }}</td>
+                <td class="total-cell">{{ datos.total_prod5_teorico }}</td>
+                <td class="total-cell">{{ datos.total_prod5_real or '' }}</td>
+                <td class="total-cell">{{ datos.total_prod6_teorico }}</td>
+                <td class="total-cell">{{ datos.total_prod6_real or '' }}</td>
+            </tr>
+            
+        </tbody>
+    </table>
+
+    {% if datos.concho_texto %}
+    <div>
+        <strong>{{ datos.concho_texto }}</strong>
+    </div>
+    {% endif %}
+
+    <h2 class="page-break">Detalle de Maquinaria</h2>
+    <table class="page-break">
+        <thead>
+            <tr>
+                <th>Operador</th>
+                <th>Firma</th>
+                <th>Tractor</th>
+                <th>Maquinaria</th>
+                <th>Capacidad [L]</th>
+                <th>Velocidad [Km/H]</th>
+                <th>Marcha</th>
+                <th>R.P.M.</th>
+                <th>Presión [Bar]</th>
+                <th>Boquillas</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in maquinaria %}
+            <tr>
+                <td>{{ m.operador }}</td>
+                <td></td>
+                <td>{{ m.tractor }}</td>
+                <td>{{ m.maquinaria }}</td>
+                <td>{{ m.capacidad_litros }}</td>
+                <td>{{ m.velocidad }}</td>
+                <td>{{ m.marcha }}</td>
+                <td>{{ m.rpm }}</td>
+                <td>{{ m.presion_bar }}</td>
+                <td>{{ m.boquillas }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="safety-protocol page-break">
+        <h2>Protocolo de Seguridad</h2>
+        <ul>
+            <li>Señalar cuartel aplicado con banderilla roja y letrero de identificación y advertencia.</li>
+            <li>El aplicador debe utilizar EPPs recomendados según productos, contar con credencial SAG y licencia clase D en caso de utilizar tractor.</li>
+            <li>Se debe dar aviso a vecinos de zonas colindantes con al menos 24 hrs. antes de la aplicación.</li>
+            <li>De aplicar en zona sensible, explicitar en observaciones si está identificada esta zona y si cuenta con franja de seguridad.</li>
+        </ul>
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,152 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+    background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+    color: #2E7D32;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: #FFFFFF;
+    border-radius: 12px;
+    padding: 40px;
+    box-shadow: 0 2px 10px rgba(76, 175, 80, 0.1);
+}
+
+.app-title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 300;
+    color: #388E3C;
+    margin-bottom: 40px;
+    letter-spacing: 1px;
+}
+
+h1 {
+    text-align: center;
+    font-size: 20px;
+    font-weight: 400;
+    color: #2E7D32;
+    margin-bottom: 30px;
+}
+
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 30px;
+}
+
+.btn {
+    display: inline-block;
+    padding: 14px 28px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 500;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+    font-size: 15px;
+    transition: all 0.2s ease;
+    letter-spacing: 0.5px;
+}
+
+.btn-primary {
+    background-color: #81C784;
+    color: #FFFFFF;
+}
+
+.btn-primary:hover {
+    background-color: #66BB6A;
+    transform: translateY(-1px);
+}
+
+.btn-secondary {
+    background-color: #4CAF50;
+    color: #FFFFFF;
+}
+
+.btn-secondary:hover {
+    background-color: #388E3C;
+    transform: translateY(-1px);
+}
+
+.form-card {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 30px 0;
+}
+
+label {
+    font-weight: 500;
+    color: #2E7D32;
+    font-size: 14px;
+}
+
+select {
+    padding: 12px;
+    font-size: 15px;
+    border: 2px solid #C8E6C9;
+    border-radius: 8px;
+    background: #FFFFFF;
+    color: #2E7D32;
+    transition: border-color 0.2s ease;
+}
+
+select:focus {
+    outline: none;
+    border-color: #66BB6A;
+}
+
+button {
+    padding: 12px 24px;
+    font-size: 15px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.info-box {
+    margin-top: 24px;
+    padding: 16px;
+    border-radius: 8px;
+    background-color: #E8F5E9;
+    border-left: 4px solid #66BB6A;
+}
+
+.info-box p {
+    margin: 8px 0;
+    color: #2E7D32;
+    font-size: 14px;
+}
+
+.info-box strong {
+    color: #388E3C;
+}
+
+.back-link {
+    margin-top: 30px;
+    text-align: center;
+}
+
+.back-link a {
+    color: #66BB6A;
+    text-decoration: none;
+    font-size: 14px;
+    transition: color 0.2s ease;
+}
+
+.back-link a:hover {
+    color: #4CAF50;
+    text-decoration: underline;
+}

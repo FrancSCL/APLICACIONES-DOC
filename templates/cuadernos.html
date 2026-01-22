@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cuadernos de Campo - LH-APLICACIONES-DOCS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+<div class="container">
+    <div class="app-title">LH-APLICACIONES-DOCS</div>
+    <h1>Cuadernos de Campo</h1>
+
+    <form method="post" class="form-card">
+        <label for="id_campo">Seleccione un campo:</label>
+        <select name="id_campo" id="id_campo" required>
+            <option value="">-- Seleccione --</option>
+            {% for campo in campos %}
+                <option value="{{ campo.id_campo }}"
+                        {% if campo_seleccionado == campo.id_campo %}selected{% endif %}>
+                    {{ campo.nombre_campo }}
+                </option>
+            {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary">Confirmar</button>
+    </form>
+
+    {% if nombre_campo_seleccionado %}
+        <div class="info-box">
+            Campo seleccionado: <strong>{{ nombre_campo_seleccionado }}</strong>
+        </div>
+    {% endif %}
+
+    <div class="back-link">
+        <a href="{{ url_for('index') }}">&larr; Volver al menú principal</a>
+    </div>
+</div>
+</body>
+</html>

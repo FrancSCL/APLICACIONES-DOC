@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Papeleta de Aplicación - LH-APLICACIONES-DOCS</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+<div class="container">
+    <div class="app-title">LH-APLICACIONES-DOCS</div>
+    <h1>Papeleta de Aplicación</h1>
+
+    <form method="post" class="form-card">
+        <label for="id_sucursal">1. Seleccione una sucursal (fundo):</label>
+        <select name="id_sucursal" id="id_sucursal" required>
+            <option value="">-- Seleccione sucursal --</option>
+            {% for s in sucursales %}
+                <option value="{{ s.id }}"
+                        {% if sucursal_seleccionada and sucursal_seleccionada|string == s.id|string %}selected{% endif %}>
+                    {{ s.sucursal }}
+                </option>
+            {% endfor %}
+        </select>
+
+        {% if sucursal_seleccionada %}
+            <label for="id_aplicacion">2. Seleccione una aplicación fitosanitaria:</label>
+            <select name="id_aplicacion" id="id_aplicacion" required>
+                <option value="">-- Seleccione aplicación --</option>
+                {% for a in aplicaciones %}
+                    <option value="{{ a.id_aplicacion }}"
+                            {% if aplicacion_seleccionada and aplicacion_seleccionada.id_aplicacion == a.id_aplicacion %}selected{% endif %}>
+                        {{ a.folio }} - {{ a.fecha_planificacion }}
+                    </option>
+                {% endfor %}
+            </select>
+        {% endif %}
+
+        <button type="submit" class="btn btn-primary">
+            {% if sucursal_seleccionada %}Confirmar aplicación{% else %}Filtrar por sucursal{% endif %}
+        </button>
+    </form>
+
+    {% if aplicacion_seleccionada %}
+        <div class="info-box">
+            <p><strong>Folio:</strong> {{ aplicacion_seleccionada.folio }}</p>
+            <p><strong>Fecha planificación:</strong> {{ aplicacion_seleccionada.fecha_planificacion }}</p>
+            
+            <div style="margin-top: 20px;">
+                <a class="btn btn-secondary"
+                   href="{{ url_for('papeleta_pdf', id_aplicacion=aplicacion_seleccionada.id_aplicacion) }}">
+                    Generar PDF
+                </a>
+            </div>
+        </div>
+    {% endif %}
+
+    <div class="back-link">
+        <a href="{{ url_for('index') }}">&larr; Volver al menú principal</a>
+    </div>
+</div>
+</body>
+</html>
