@@ -18,17 +18,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Descargar e instalar wkhtmltopdf manualmente (no está en repositorios de Debian Trixie)
-# Forzamos la instalación ignorando dependencias y creamos symlinks para compatibilidad
-RUN wget -q https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.bullseye_amd64.deb -O /tmp/wkhtmltopdf.deb && \
+# Instalamos libssl1.1 desde Debian Bullseye (compatible) ya que wkhtmltopdf lo requiere
+RUN echo "deb http://deb.debian.org/debian bullseye main" > /etc/apt/sources.list.d/bullseye.list && \
     apt-get update && \
-    dpkg --force-depends --force-all -i /tmp/wkhtmltopdf.deb || true && \
-    # Crear symlink para libssl1.1 -> libssl3 (compatibilidad)
-    mkdir -p /usr/lib/x86_64-linux-gnu && \
-    (ln -sf /usr/lib/x86_64-linux-gnu/libssl.so.3 /usr/lib/x86_64-linux-gnu/libssl.so.1.1 || true) && \
-    (ln -sf /usr/lib/x86_64-linux-gnu/libcrypto.so.3 /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 || true) && \
-    # Marcar el paquete como instalado correctamente para evitar que apt-get lo elimine
-    dpkg --configure -a || true && \
+    apt-get install -y --no-install-recommends -t bullseye libssl1.1 && \
+    wget -q https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.bullseye_amd64.deb -O /tmp/wkhtmltopdf.deb && \
+    dpkg -i /tmp/wkhtmltopdf.deb && \
     rm /tmp/wkhtmltopdf.deb && \
+    rm /etc/apt/sources.list.d/bullseye.list && \
     rm -rf /var/lib/apt/lists/* && \
     wkhtmltopdf --version
 
