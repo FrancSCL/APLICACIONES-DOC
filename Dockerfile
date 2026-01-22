@@ -18,11 +18,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Descargar e instalar wkhtmltopdf manualmente (no está en repositorios de Debian Trixie)
-# Ignoramos la dependencia de libssl1.1 porque libssl3 es compatible
+# Forzamos la instalación ignorando dependencias y creamos symlinks para compatibilidad
 RUN wget -q https://github.com/wkhtmltopdf/packaging/releases/download/0.12.6.1-3/wkhtmltox_0.12.6.1-3.bullseye_amd64.deb -O /tmp/wkhtmltopdf.deb && \
     apt-get update && \
-    dpkg --ignore-depends=libssl1.1 -i /tmp/wkhtmltopdf.deb || true && \
-    apt-get install -y -f && \
+    dpkg --force-depends --force-all -i /tmp/wkhtmltopdf.deb || true && \
+    # Crear symlink para libssl1.1 -> libssl3 (compatibilidad)
+    mkdir -p /usr/lib/x86_64-linux-gnu && \
+    (ln -sf /usr/lib/x86_64-linux-gnu/libssl.so.3 /usr/lib/x86_64-linux-gnu/libssl.so.1.1 || true) && \
+    (ln -sf /usr/lib/x86_64-linux-gnu/libcrypto.so.3 /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 || true) && \
+    # Marcar el paquete como instalado correctamente para evitar que apt-get lo elimine
+    dpkg --configure -a || true && \
     rm /tmp/wkhtmltopdf.deb && \
     rm -rf /var/lib/apt/lists/* && \
     wkhtmltopdf --version
