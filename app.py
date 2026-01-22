@@ -618,11 +618,18 @@ def register_routes(app: Flask):
                         else:
                             concho_display = f"{round(concho_litros)} L"
                         
+                        # Formatear superficie con máximo 1 decimal
+                        superficie_rounded = round(superficie, 1)
+                        if superficie_rounded == int(superficie_rounded):
+                            hectareas_aplicar_str = f"{int(superficie_rounded)} ha(s)"
+                        else:
+                            hectareas_aplicar_str = f"{superficie_rounded} ha(s)"
+                        
                         cuartel_dict = {
                             'centro_costo': cuartel.get('centro_costo', ''),
                             'cuartel': cuartel.get('cuartel', ''),
                             'variedad': cuartel.get('variedad', ''),
-                            'hectareas_aplicar': f"{int(superficie) if superficie == int(superficie) else superficie} ha(s)",
+                            'hectareas_aplicar': hectareas_aplicar_str,
                             'hectareas_aplicadas': '',
                             'fecha_viable_cosecha': cuartel.get('fecha_viable_cosecha', ''),
                             'hora_inicio': cuartel.get('hora_inicio', ''),
@@ -670,7 +677,12 @@ def register_routes(app: Flask):
                     else:
                         total_concho_display = f"{round(total_concho)} L"
                     
-                    datos_papeleta['total_superficie'] = f"{int(total_superficie) if total_superficie == int(total_superficie) else total_superficie} ha(s)"
+                    # Formatear total superficie con máximo 1 decimal
+                    total_superficie_rounded = round(total_superficie, 1)
+                    if total_superficie_rounded == int(total_superficie_rounded):
+                        datos_papeleta['total_superficie'] = f"{int(total_superficie_rounded)} ha(s)"
+                    else:
+                        datos_papeleta['total_superficie'] = f"{total_superficie_rounded} ha(s)"
                     datos_papeleta['total_mezcla_cuartel'] = f"{round(total_mezcla)} L"
                     datos_papeleta['total_maquinadas'] = total_maq_display
                     datos_papeleta['total_concho'] = total_concho_display
