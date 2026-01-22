@@ -11,6 +11,13 @@
     <div class="app-title">LH-APLICACIONES-DOCS</div>
     <h1>Papeleta de Aplicación</h1>
 
+    {% if error_message %}
+        <div style="background-color: #ffebee; border: 1px solid #f44336; color: #c62828; padding: 15px; margin: 20px 0; border-radius: 4px;">
+            <strong>Error:</strong> {{ error_message }}
+            <br><small>Por favor, verifica la configuración de la base de datos o contacta al administrador.</small>
+        </div>
+    {% endif %}
+
     <form method="post" class="form-card">
         <label for="id_sucursal">1. Seleccione una sucursal (fundo):</label>
         <select name="id_sucursal" id="id_sucursal" required>

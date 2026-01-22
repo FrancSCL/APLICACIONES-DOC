@@ -37,11 +37,16 @@ def get_db_connection(app):
             user=app.config["MYSQL_USER"],
             password=app.config["MYSQL_PASSWORD"],
             database=app.config["MYSQL_DB"],
+            connection_timeout=10,  # Timeout de conexión en segundos
+            autocommit=False,
         )
         return conn
     except Error as e:
         # En producción conviene registrar esto en logs en lugar de imprimir.
         print(f"Error conectando a MySQL: {e}")
+        return None
+    except Exception as e:
+        print(f"Error inesperado conectando a MySQL: {e}")
         return None
 
 
@@ -117,62 +122,82 @@ def register_routes(app: Flask):
         1. Seleccionar sucursal.
         2. Según la sucursal, listar aplicaciones fitosanitarias y permitir elegir una para generar PDF.
         """
-        conn = get_db_connection(app)
-        if conn is None:
-            abort(500, description="No se pudo conectar a la base de datos.")
-
         sucursales = []
         aplicaciones = []
         sucursal_seleccionada = None
         aplicacion_seleccionada = None
+        error_message = None
 
         try:
-            with conn.cursor(dictionary=True) as cur:
-                # Listar sucursales productivas disponibles (solo IDs: 2, 3, 4, 5, 6, 7, 8, 9, 27)
-                cur.execute(
-                    """
-                    SELECT id, sucursal
-                    FROM DIM_GENERAL_SUCURSAL
-                    WHERE id IN (2, 3, 4, 5, 6, 7, 8, 9, 27)
-                    ORDER BY sucursal
-                    """
+            conn = get_db_connection(app)
+            if conn is None:
+                error_message = "No se pudo conectar a la base de datos. Verifica las credenciales y la conectividad."
+                return render_template(
+                    "papeleta.html",
+                    sucursales=[],
+                    sucursal_seleccionada=None,
+                    aplicaciones=[],
+                    aplicacion_seleccionada=None,
+                    error_message=error_message,
                 )
-                sucursales = cur.fetchall()
 
-                if request.method == "POST":
-                    sucursal_seleccionada = request.form.get("id_sucursal")
+            try:
+                with conn.cursor(dictionary=True) as cur:
+                    # Listar sucursales productivas disponibles (solo IDs: 2, 3, 4, 5, 6, 7, 8, 9, 27)
+                    cur.execute(
+                        """
+                        SELECT id, sucursal
+                        FROM DIM_GENERAL_SUCURSAL
+                        WHERE id IN (2, 3, 4, 5, 6, 7, 8, 9, 27)
+                        ORDER BY sucursal
+                        """
+                    )
+                    sucursales = cur.fetchall()
 
-                    if sucursal_seleccionada:
-                        # Listar aplicaciones filtradas por sucursal
-                        cur.execute(
-                            """
-                            SELECT 
-                                id AS id_aplicacion,
-                                CASE 
-                                    WHEN num_documento IS NOT NULL 
-                                    THEN CONCAT('C', YEAR(fecha_planificacion), num_documento)
-                                    ELSE id
-                                END AS folio,
-                                fecha_planificacion,
-                                num_documento
-                            FROM `FACT_AREATECNICA_FITO_ APLICACION`
-                            WHERE fecha_planificacion IS NOT NULL
-                              AND id_sucursal = %s
-                            ORDER BY fecha_planificacion DESC
-                            LIMIT 100
-                            """,
-                            (sucursal_seleccionada,),
-                        )
-                        aplicaciones = cur.fetchall()
+                    if request.method == "POST":
+                        sucursal_seleccionada = request.form.get("id_sucursal")
 
-                        aplicacion_id = request.form.get("id_aplicacion")
-                        if aplicacion_id:
-                            for a in aplicaciones:
-                                if str(a["id_aplicacion"]) == str(aplicacion_id):
-                                    aplicacion_seleccionada = a
-                                    break
-        finally:
-            conn.close()
+                        if sucursal_seleccionada:
+                            # Listar aplicaciones filtradas por sucursal
+                            cur.execute(
+                                """
+                                SELECT 
+                                    id AS id_aplicacion,
+                                    CASE 
+                                        WHEN num_documento IS NOT NULL 
+                                        THEN CONCAT('C', YEAR(fecha_planificacion), num_documento)
+                                        ELSE id
+                                    END AS folio,
+                                    fecha_planificacion,
+                                    num_documento
+                                FROM `FACT_AREATECNICA_FITO_ APLICACION`
+                                WHERE fecha_planificacion IS NOT NULL
+                                  AND id_sucursal = %s
+                                ORDER BY fecha_planificacion DESC
+                                LIMIT 100
+                                """,
+                                (sucursal_seleccionada,),
+                            )
+                            aplicaciones = cur.fetchall()
+
+                            aplicacion_id = request.form.get("id_aplicacion")
+                            if aplicacion_id:
+                                for a in aplicaciones:
+                                    if str(a["id_aplicacion"]) == str(aplicacion_id):
+                                        aplicacion_seleccionada = a
+                                        break
+            except Exception as e:
+                print(f"Error en consulta SQL: {e}")
+                error_message = f"Error al consultar la base de datos: {str(e)}"
+            finally:
+                if conn:
+                    try:
+                        conn.close()
+                    except:
+                        pass
+        except Exception as e:
+            print(f"Error general en /papeleta: {e}")
+            error_message = f"Error inesperado: {str(e)}"
 
         return render_template(
             "papeleta.html",
@@ -180,6 +205,7 @@ def register_routes(app: Flask):
             sucursal_seleccionada=sucursal_seleccionada,
             aplicaciones=aplicaciones,
             aplicacion_seleccionada=aplicacion_seleccionada,
+            error_message=error_message,
         )
 
     # ──────────────────────────────────────────────
