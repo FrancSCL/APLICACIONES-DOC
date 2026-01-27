@@ -126,6 +126,8 @@ def register_routes(app: Flask):
         aplicaciones = []
         sucursal_seleccionada = None
         aplicacion_seleccionada = None
+        anio_seleccionado = None
+        mes_seleccionado = None
         error_message = None
 
         try:
@@ -155,37 +157,52 @@ def register_routes(app: Flask):
                     sucursales = cur.fetchall()
 
                     if request.method == "POST":
-                        sucursal_seleccionada = request.form.get("id_sucursal")
+                        sucursal_seleccionada = request.form.get("id_sucursal") or None
+                        # Leer filtros opcionales de año y mes solo cuando hay POST
+                        anio_seleccionado = request.form.get("anio") or None
+                        mes_seleccionado = request.form.get("mes") or None
 
-                        if sucursal_seleccionada:
-                            # Listar aplicaciones filtradas por sucursal
-                            cur.execute(
-                                """
-                                SELECT 
-                                    id AS id_aplicacion,
-                                    CASE 
-                                        WHEN num_documento IS NOT NULL 
-                                        THEN CONCAT('C', YEAR(fecha_planificacion), num_documento)
-                                        ELSE id
-                                    END AS folio,
-                                    fecha_planificacion,
-                                    num_documento
-                                FROM `FACT_AREATECNICA_FITO_ APLICACION`
-                                WHERE fecha_planificacion IS NOT NULL
-                                  AND id_sucursal = %s
-                                ORDER BY fecha_planificacion DESC
-                                LIMIT 100
-                                """,
-                                (sucursal_seleccionada,),
-                            )
-                            aplicaciones = cur.fetchall()
+                    if sucursal_seleccionada:
+                        # Listar aplicaciones históricas filtradas por sucursal
+                        # Se usa la tabla FACT_AREATECNICA_FITO_APLICACION_HISTORICO (histórico).
+                        base_query = """
+                            SELECT 
+                                id AS id_aplicacion,              -- ID histórico del registro
+                                CASE 
+                                    WHEN num_documento IS NOT NULL 
+                                    THEN CONCAT('C', YEAR(fecha_planificacion), num_documento)
+                                    ELSE id_aplicacion
+                                END AS folio,
+                                fecha_planificacion,
+                                num_documento
+                            FROM FACT_AREATECNICA_FITO_APLICACION_HISTORICO
+                            WHERE fecha_planificacion IS NOT NULL
+                              AND id_sucursal = %s
+                        """
+                        params = [sucursal_seleccionada]
 
-                            aplicacion_id = request.form.get("id_aplicacion")
-                            if aplicacion_id:
-                                for a in aplicaciones:
-                                    if str(a["id_aplicacion"]) == str(aplicacion_id):
-                                        aplicacion_seleccionada = a
-                                        break
+                        # Filtro por año/mes si vienen informados
+                        if anio_seleccionado:
+                            base_query += " AND YEAR(fecha_planificacion) = %s"
+                            params.append(anio_seleccionado)
+                        if mes_seleccionado:
+                            base_query += " AND MONTH(fecha_planificacion) = %s"
+                            params.append(mes_seleccionado)
+
+                        base_query += """
+                            ORDER BY fecha_planificacion DESC
+                            LIMIT 300
+                        """
+
+                        cur.execute(base_query, tuple(params))
+                        aplicaciones = cur.fetchall()
+
+                        aplicacion_id = request.form.get("id_aplicacion")
+                        if aplicacion_id:
+                            for a in aplicaciones:
+                                if str(a["id_aplicacion"]) == str(aplicacion_id):
+                                    aplicacion_seleccionada = a
+                                    break
             except Exception as e:
                 print(f"Error en consulta SQL: {e}")
                 error_message = f"Error al consultar la base de datos: {str(e)}"
@@ -205,6 +222,8 @@ def register_routes(app: Flask):
             sucursal_seleccionada=sucursal_seleccionada,
             aplicaciones=aplicaciones,
             aplicacion_seleccionada=aplicacion_seleccionada,
+            anio_seleccionado=int(anio_seleccionado) if anio_seleccionado else None,
+            mes_seleccionado=int(mes_seleccionado) if mes_seleccionado else None,
             error_message=error_message,
         )
 
@@ -214,9 +233,10 @@ def register_routes(app: Flask):
     @app.route("/papeleta/pdf/<id_aplicacion>")
     def papeleta_pdf(id_aplicacion):
         """
-        Genera un PDF a partir del HTML de la papeleta usando WeasyPrint.
-        Los datos se obtienen directamente desde FACT_AREATECNICA_FITO_APLICACION
-        y sus tablas relacionadas (DIM y FACT).
+        Genera un PDF a partir del HTML de la papeleta usando pdfkit + wkhtmltopdf.
+        A partir de ahora, los datos base se obtienen desde FACT_AREATECNICA_FITO_APLICACION_HISTORICO
+        (tabla histórica), y a través de su columna id_aplicacion se consultan las tablas FACT/DIM
+        relacionadas (PRODUCTOSAAPLICAR, CUARTELESAAPLICAR, etc.).
         """
         conn = get_db_connection(app)
         if conn is None:
@@ -230,15 +250,17 @@ def register_routes(app: Flask):
         try:
             with conn.cursor(dictionary=True) as cur:
                 # 1) Obtener datos principales de la aplicación
-                # Primero obtenemos los datos básicos sin JOINs complejos
+                # Ahora se consultan desde la tabla histórica FACT_AREATECNICA_FITO_APLICACION_HISTORICO.
+                # El parámetro id_aplicacion que llega en la URL corresponde al ID histórico (columna id).
                 cur.execute(
                     """
                     SELECT 
-                        id AS id_aplicacion,
+                        id AS id_historico,
+                        id_aplicacion,  -- id original de la aplicación en línea
                         CASE 
                             WHEN num_documento IS NOT NULL 
                             THEN CONCAT('C', YEAR(fecha_planificacion), num_documento)
-                            ELSE id
+                            ELSE id_aplicacion
                         END AS folio,
                         fecha_planificacion,
                         CONCAT(YEAR(fecha_planificacion) - 1, '-', YEAR(fecha_planificacion) % 100) AS temporada,
@@ -257,7 +279,7 @@ def register_routes(app: Flask):
                         seleccion_tractores,
                         seleccion_maquinarias,
                         aplicadores
-                    FROM `FACT_AREATECNICA_FITO_ APLICACION`
+                    FROM FACT_AREATECNICA_FITO_APLICACION_HISTORICO
                     WHERE id = %s
                     """,
                     (id_aplicacion,),
@@ -266,6 +288,9 @@ def register_routes(app: Flask):
 
                 if not datos_base:
                     abort(404, description="Aplicación no encontrada.")
+
+                # Guardamos el ID original de la aplicación (tabla en línea)
+                id_aplicacion_original = datos_base["id_aplicacion"]
 
                 # Ahora obtenemos los datos relacionados desde las tablas DIM
                 # (con manejo de errores si las tablas no existen)
@@ -436,7 +461,7 @@ def register_routes(app: Flask):
                                 WHERE ca.id_aplicacion = %s
                                 LIMIT 1
                                 """,
-                                (id_aplicacion,)
+                                (id_aplicacion_original,)
                             )
                             result = cur.fetchone()
                             if result:
@@ -497,7 +522,7 @@ def register_routes(app: Flask):
                         GROUP BY pp.id_producto
                         ORDER BY MIN(pp.id)
                         """,
-                        (datos_base['id_especie'], id_aplicacion),
+                        (datos_base['id_especie'], id_aplicacion_original),
                     )
                     productos_raw = cur.fetchall()
                     
@@ -546,7 +571,7 @@ def register_routes(app: Flask):
                         WHERE c.id_aplicacion = %s AND c.id_maquinaria IS NOT NULL
                         LIMIT 1
                         """,
-                        (id_aplicacion,),
+                        (id_aplicacion_original,),
                     )
                     maq_result = cur.fetchone()
                     if maq_result and maq_result.get('id_maquinaria'):
@@ -598,7 +623,7 @@ def register_routes(app: Flask):
                         WHERE c.id_aplicacion = %s
                         ORDER BY cu.CUARTEL
                         """,
-                        (id_aplicacion,),
+                        (id_aplicacion_original,),
                     )
                     cuarteles_raw = cur.fetchall()
 
@@ -738,7 +763,7 @@ def register_routes(app: Flask):
                           AND (c.id_aplicador IS NOT NULL OR c.id_tractor IS NOT NULL OR c.id_maquinaria IS NOT NULL)
                         LIMIT 1
                         """,
-                        (id_aplicacion,),
+                        (id_aplicacion_original,),
                     )
                     maq_data = cur.fetchone()
                     

@@ -31,8 +31,32 @@
         </select>
 
         {% if sucursal_seleccionada %}
-            <label for="id_aplicacion">2. Seleccione una aplicación fitosanitaria:</label>
-            <select name="id_aplicacion" id="id_aplicacion" required>
+            <div style="display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap;">
+                <div>
+                    <label for="anio">2. Año (opcional):</label>
+                    <input type="number" name="anio" id="anio"
+                           min="2000" max="2100"
+                           value="{{ anio_seleccionado or '' }}"
+                           style="width: 110px;">
+                </div>
+                <div>
+                    <label for="mes">3. Mes (opcional):</label>
+                    <select name="mes" id="mes" style="width: 140px;">
+                        <option value="">-- Todos los meses --</option>
+                        {% for m in range(1,13) %}
+                            <option value="{{ m }}"
+                                    {% if mes_seleccionado and mes_seleccionado == m %}selected{% endif %}>
+                                {{ "%02d"|format(m) }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        {% endif %}
+
+        {% if sucursal_seleccionada %}
+            <label for="id_aplicacion" style="margin-top: 10px;">4. Seleccione una aplicación fitosanitaria:</label>
+            <select name="id_aplicacion" id="id_aplicacion">
                 <option value="">-- Seleccione aplicación --</option>
                 {% for a in aplicaciones %}
                     <option value="{{ a.id_aplicacion }}"
@@ -66,5 +90,32 @@
         <a href="{{ url_for('index') }}">&larr; Volver al menú principal</a>
     </div>
 </div>
+</body>
+
+<script>
+// Auto-refresca la lista de aplicaciones al cambiar sucursal / año / mes
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('form.form-card');
+    if (!form) return;
+
+    const sucursal = document.getElementById('id_sucursal');
+    const anio = document.getElementById('anio');
+    const mes = document.getElementById('mes');
+
+    function autoSubmit() {
+        const appSelect = document.getElementById('id_aplicacion');
+        if (appSelect) {
+            appSelect.value = '';  // limpiar selección de aplicación al cambiar filtros
+        }
+        form.submit();
+    }
+
+    [sucursal, anio, mes].forEach(function (el) {
+        if (el) {
+            el.addEventListener('change', autoSubmit);
+        }
+    });
+});
+</script>
 </body>
 </html>
