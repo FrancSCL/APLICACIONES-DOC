@@ -272,6 +272,7 @@ def register_routes(app: Flask):
                         END AS folio,
                         fecha_planificacion,
                         CONCAT(YEAR(fecha_planificacion) - 1, '-', YEAR(fecha_planificacion) % 100) AS temporada,
+                        num_documento,
                         mojamiento,
                         CASE 
                             WHEN modo_aplicacion = 4 THEN 'NO APLICA'
@@ -327,6 +328,32 @@ def register_routes(app: Flask):
                         datos_papeleta['temporada_formatted'] = datos_papeleta['temporada']
                 else:
                     datos_papeleta['temporada_formatted'] = ''
+
+                # Ajustar folio (Orden N°) según sucursal:
+                # prefijo distinto a "C" según id_sucursal.
+                try:
+                    num_doc = datos_base.get('num_documento')
+                    if num_doc is not None:
+                        # Año desde fecha_planificacion
+                        fecha_folio = datos_base.get('fecha_planificacion')
+                        if isinstance(fecha_folio, str):
+                            from datetime import datetime
+                            fecha_folio = datetime.strptime(fecha_folio, '%Y-%m-%d')
+                        year_folio = fecha_folio.year
+
+                        prefijos_sucursal = {
+                            2: 'SM',
+                            3: 'SV',
+                            4: 'C',
+                            5: 'CC',
+                            7: 'SI',
+                            8: 'MG',
+                            27: 'CI',
+                        }
+                        prefijo = prefijos_sucursal.get(datos_base['id_sucursal'], 'C')
+                        datos_papeleta['folio'] = f"{prefijo}{year_folio}{num_doc}"
+                except Exception as e:
+                    print(f"Error ajustando folio por sucursal: {e}")
                 
                 # Obtener fundo/sucursal
                 try:
