@@ -180,7 +180,7 @@ def register_routes(app: Flask):
                                 END AS folio,
                                 fecha_planificacion,
                                 num_documento,
-                                CONCAT('2025', ' ', COALESCE(num_documento, id_aplicacion), ' ', fecha_planificacion) AS etiqueta
+                                CONCAT('2026', ' ', COALESCE(num_documento, id_aplicacion), ' ', fecha_planificacion) AS etiqueta
                             FROM FACT_AREATECNICA_FITO_APLICACION_HISTORICO
                             WHERE fecha_planificacion IS NOT NULL
                               AND id_sucursal = %s
