@@ -461,7 +461,7 @@ def register_routes(app: Flask):
                                 WHERE ca.id_aplicacion = %s
                                 LIMIT 1
                                 """,
-                                (id_aplicacion_original,)
+                                (id_aplicacion,)
                             )
                             result = cur.fetchone()
                             if result:
@@ -509,7 +509,7 @@ def register_routes(app: Flask):
                             MIN(pp.observaciones) AS observaciones,
                             COALESCE(MIN(u.abreviatura), '') AS unidad_abrev,
                             COALESCE(MIN(u.unidad_estandar), '') AS unidad_estandar
-                        FROM FACT_AREATECNICA_FITO_PRODUCTOSAAPLICAR pp
+                        FROM FACT_AREATECNICA_FITO_PRODUCTOSAAPLICAR_HISTORICO pp
                         INNER JOIN DIM_AREATECNICA_FITO_PRODUCTO p ON pp.id_producto = p.id
                         LEFT JOIN DIM_AREATECNICA_FITO_PROD_IA pia ON p.id = pia.id_prod
                         LEFT JOIN DIM_AREATECNICA_FITO_PRODUCTOIA ia ON pia.id_ia = ia.id
@@ -522,7 +522,7 @@ def register_routes(app: Flask):
                         GROUP BY pp.id_producto
                         ORDER BY MIN(pp.id)
                         """,
-                        (datos_base['id_especie'], id_aplicacion_original),
+                        (datos_base['id_especie'], id_aplicacion),
                     )
                     productos_raw = cur.fetchall()
                     
@@ -571,7 +571,7 @@ def register_routes(app: Flask):
                         WHERE c.id_aplicacion = %s AND c.id_maquinaria IS NOT NULL
                         LIMIT 1
                         """,
-                        (id_aplicacion_original,),
+                        (id_aplicacion,),
                     )
                     maq_result = cur.fetchone()
                     if maq_result and maq_result.get('id_maquinaria'):
@@ -623,7 +623,7 @@ def register_routes(app: Flask):
                         WHERE c.id_aplicacion = %s
                         ORDER BY cu.CUARTEL
                         """,
-                        (id_aplicacion_original,),
+                        (id_aplicacion,),
                     )
                     cuarteles_raw = cur.fetchall()
 
@@ -763,7 +763,7 @@ def register_routes(app: Flask):
                           AND (c.id_aplicador IS NOT NULL OR c.id_tractor IS NOT NULL OR c.id_maquinaria IS NOT NULL)
                         LIMIT 1
                         """,
-                        (id_aplicacion_original,),
+                        (id_aplicacion,),
                     )
                     maq_data = cur.fetchone()
                     
