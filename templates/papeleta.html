@@ -61,7 +61,7 @@
                 {% for a in aplicaciones %}
                     <option value="{{ a.id_aplicacion }}"
                             {% if aplicacion_seleccionada and aplicacion_seleccionada.id_aplicacion == a.id_aplicacion %}selected{% endif %}>
-                        {{ a.folio }} - {{ a.fecha_planificacion }}
+                        {{ a.etiqueta }}
                     </option>
                 {% endfor %}
             </select>
