@@ -67,9 +67,16 @@
             </select>
         {% endif %}
 
-        <button type="submit" class="btn btn-primary">
-            {% if sucursal_seleccionada %}Confirmar aplicación{% else %}Filtrar por sucursal{% endif %}
-        </button>
+        <div style="display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap;">
+            <button type="submit" class="btn btn-primary" name="accion" value="">
+                {% if sucursal_seleccionada %}Confirmar aplicación{% else %}Filtrar por sucursal{% endif %}
+            </button>
+            {% if sucursal_seleccionada %}
+                <button type="submit" class="btn btn-secondary" name="ver_todos" value="1" title="Cargar todos los documentos de esta sucursal (sin filtro de año/mes)">
+                    Ver todos los documentos
+                </button>
+            {% endif %}
+        </div>
     </form>
 
     {% if aplicacion_seleccionada %}

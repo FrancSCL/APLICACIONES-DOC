@@ -159,8 +159,13 @@ def register_routes(app: Flask):
                     if request.method == "POST":
                         sucursal_seleccionada = request.form.get("id_sucursal") or None
                         # Leer filtros opcionales de año y mes solo cuando hay POST
-                        anio_seleccionado = request.form.get("anio") or None
-                        mes_seleccionado = request.form.get("mes") or None
+                        ver_todos = request.form.get("ver_todos") == "1"
+                        if ver_todos:
+                            anio_seleccionado = None
+                            mes_seleccionado = None
+                        else:
+                            anio_seleccionado = request.form.get("anio") or None
+                            mes_seleccionado = request.form.get("mes") or None
 
                     if sucursal_seleccionada:
                         # Listar aplicaciones históricas filtradas por sucursal
@@ -181,7 +186,7 @@ def register_routes(app: Flask):
                         """
                         params = [sucursal_seleccionada]
 
-                        # Filtro por año/mes si vienen informados
+                        # Filtro por año/mes si vienen informados (y no se pulsó "Ver todos")
                         if anio_seleccionado:
                             base_query += " AND YEAR(fecha_planificacion) = %s"
                             params.append(anio_seleccionado)
@@ -189,10 +194,12 @@ def register_routes(app: Flask):
                             base_query += " AND MONTH(fecha_planificacion) = %s"
                             params.append(mes_seleccionado)
 
+                        # "Ver todos" -> hasta 5000; filtrado normal -> 300
+                        ver_todos_post = request.method == "POST" and request.form.get("ver_todos") == "1"
+                        limit_val = 5000 if ver_todos_post else 300
                         base_query += """
                             ORDER BY fecha_planificacion DESC
-                            LIMIT 300
-                        """
+                            LIMIT """ + str(limit_val)
 
                         cur.execute(base_query, tuple(params))
                         aplicaciones = cur.fetchall()
