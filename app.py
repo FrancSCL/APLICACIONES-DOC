@@ -561,6 +561,43 @@ def register_routes(app: Flask):
                     )
                     productos_raw = cur.fetchall()
                     
+                    # Obtener capacidad de maquinaria ANTES de calcular dosis_maq (dosis por maquinada)
+                    capacidad_maq_productos = None
+                    try:
+                        cur.execute(
+                            """
+                            SELECT DISTINCT c.id_maquinaria
+                            FROM FACT_AREATECNICA_FITO_CUARTELESAAPLICAR c
+                            WHERE c.id_aplicacion = %s AND c.id_maquinaria IS NOT NULL
+                            LIMIT 1
+                            """,
+                            (id_aplicacion,),
+                        )
+                        maq_res = cur.fetchone()
+                        if maq_res and maq_res.get('id_maquinaria'):
+                            cur.execute(
+                                "SELECT capacidad_maquinaria FROM VISTA_APPSOP_MAQUINARIAACTIVA WHERE id = %s",
+                                (maq_res['id_maquinaria'],)
+                            )
+                            cap_res = cur.fetchone()
+                            if cap_res and cap_res.get('capacidad_maquinaria'):
+                                capacidad_maq_productos = cap_res['capacidad_maquinaria']
+                        if not capacidad_maq_productos:
+                            seleccion_maqs = datos_base.get('seleccion_maquinarias') or ''
+                            maq_ids = [m.strip() for m in seleccion_maqs.split(',') if m.strip()]
+                            if maq_ids:
+                                cur.execute(
+                                    "SELECT capacidad_maquinaria FROM VISTA_APPSOP_MAQUINARIAACTIVA WHERE id = %s",
+                                    (maq_ids[0],)
+                                )
+                                cap_res = cur.fetchone()
+                                if cap_res and cap_res.get('capacidad_maquinaria'):
+                                    capacidad_maq_productos = cap_res['capacidad_maquinaria']
+                    except Exception as e:
+                        print(f"Error obteniendo capacidad para dosis/maq: {e}")
+                    if not capacidad_maq_productos:
+                        capacidad_maq_productos = 1000
+                    
                     # Calcular dosis_ha y dosis_maq para cada producto
                     mojamiento = datos_papeleta.get('mojamiento', 0)
                     for prod in productos_raw:
@@ -568,15 +605,19 @@ def register_routes(app: Flask):
                         unidad_abrev = prod.get('unidad_abrev', '')
                         unidad_estandar = prod.get('unidad_estandar', '')
                         
-                        # Dosis por hectárea
+                        # Dosis por hectárea: dosis_100 * mojamiento / 100
                         dosis_ha_val = dosis_100_num * mojamiento / 100
                         if dosis_ha_val >= 1000:
                             prod['dosis_ha'] = f"{dosis_ha_val / 1000} {unidad_estandar}"
                         else:
                             prod['dosis_ha'] = f"{dosis_ha_val} {unidad_abrev}"
                         
-                        # Dosis por maquinaria (necesitaríamos capacidad_maq, por ahora igual que ha)
-                        prod['dosis_maq'] = prod['dosis_ha']
+                        # Dosis por maquinada: dosis_100 * (capacidad_maq / 100). Ej: 500 cc/100L, 1500 L -> 500 * 15 = 7500 cc
+                        dosis_maq_val = dosis_100_num * (capacidad_maq_productos / 100)
+                        if dosis_maq_val >= 1000:
+                            prod['dosis_maq'] = f"{dosis_maq_val / 1000} {unidad_estandar}"
+                        else:
+                            prod['dosis_maq'] = f"{dosis_maq_val} {unidad_abrev}"
                     
                     productos = productos_raw
                     
